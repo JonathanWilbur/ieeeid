@@ -1,0 +1,7 @@
+{
+	"name": "ieeeid",
+	"description": "Strong types for IEEE Identifiers, including MAC Addresses",
+	"authors": [ "Jonathan M. Wilbur" ],
+	"license": "BSL-1.0",
+	"targetType": "library"
+}
