@@ -4,10 +4,11 @@
 * Copyright: Jonathan M. Wilbur
 * License: [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt)
 * Date: April 29th, 2017
-* Version: 0.0.0
+* Version: 0.1.0
 
-**This version will not compile, because it is incomplete.
-Version 1.0.0 will be fully-working and thoroughly tested and reviewed.**
+**This version is not ready for use in production. It is not thoroughly tested,
+and does not include all the expected features. Please wait until the release
+of version 1.0.0 before use in production.**
 
 This is both a library and a set of related command line tools for all things
 related to IEEE Identifiers, which includes what were once referred to as 
@@ -65,21 +66,29 @@ OUI24 oui = new OUI24(0x12, 0x34, 0x56, 0x78); // An OUI should be three bytes!
 
 ## Compile and Install
 
-**This version will not compile, because it is incomplete.
-Version 1.0.0 will be fully-working and thoroughly tested and reviewed.**
-
-~~As of right now, there are no build scripts, since the source is a single file,
+As of right now, there are no build scripts, since the source is a single file,
 but there will be build scripts in the future, just for the sake of consistency
-across all similar projects.~~
+across all similar projects.
 
-~~For the moment, you can simply compile by changing to the `source` directory and
-running `dmd -lib ieeeid.d`.~~
+For the moment, you can simply compile by changing to the `source` directory and
+running `dmd -lib ieeeid.d`.
 
 ## See Also
 
 * [Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)](https://standards.ieee.org/develop/regauth/tut/eui.pdf)
 * [Guidelines for 48-Bit Global Identifier (EUI-48)](https://standards.ieee.org/develop/regauth/tut/eui48.pdf)
 * [Guidelines for 64-Bit Global Identifier (EUI-64)](https://standards.ieee.org/develop/regauth/tut/eui64.pdf)
+
+## Legal Notice
+
+The term 'EUI-48' is trademarked by the IEEE. From their
+[Guidelines for 48-Bit Global Identifier (EUI-48)](https://standards.ieee.org/develop/regauth/tut/eui48.pdf):
+
+*The term EUI-48 is trademarked by IEEE and should be so identified. Organizations
+are allowed limited use of this term for commercial purposes. Where such use is
+identification of features or capabilities specified within a standard or for claiming
+compliance to an IEEE standard this may be done without approval of IEEE, but
+other use of this term must be reviewed and approved by the IEEE RAC.*
 
 ## Contact Me
 

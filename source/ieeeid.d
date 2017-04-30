@@ -23,7 +23,7 @@
 
     Author: Jonathan M. Wilbur
     Copyright: Jonathan M. Wilbur
-    Date: April 28th, 2017
+    Date: April 30th, 2017
     License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost License 1.0)
     Standards:
         $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui.pdf,
@@ -32,38 +32,16 @@
             Guidelines for 48-Bit Global Identifier (EUI-48))
         $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui64.pdf,
             Guidelines for 64-Bit Global Identifier (EUI-64))
-    Version: 0.0.0
+    Version: 0.1.0
     See_Also:
         $(LINK2 https://en.wikipedia.org/wiki/MAC_address, Wikipedia Page for MAC Address)
 */
-
 //NOTE: The first 24-bits of an MA-S and MA-M are an OUI assigned to the IEEE RA itself.
-/*
-    TODO: Get a code review on how to condense the heavily duplicated code in
-    ExtendedUniqueIdentifier classes. Also abstract the bitLength and byteLength
-    fields, if possible.
-*/
-/*
-    REVIEW: Should constructors throw an exception if the M/X bits are set
-    incorrectly, or should they just silently change them?
-*/
 module ieeeid;
 import std.traits : Unqual;
 import std.format : sformat;
 
-version (unittest)
-{
-    import std.exception;
-}
-
-static assert(0, "ieeeid.d is not thoroughly unit-tested or reviewed, so refused to compile.");
-
-/// A generic exception thrown from invalid IEEE identifiers.
-public class IEEEIdentifierException : Exception
-{
-    import std.exception : basicExceptionCtors;
-    mixin basicExceptionCtors;
-}
+// static assert(0, "ieeeid.d is not thoroughly unit-tested or reviewed, so refused to compile.");
 
 private enum ExtendedUniqueIdentifierBroadcastScope : ubyte
 {
@@ -77,16 +55,13 @@ private enum ExtendedUniqueIdentifierRegistration : ubyte
     local = 0x02
 }
 
+//TODO: Test making the properties in here inline.
 /// An abstract class from which all IEEE Identifiers will inherit.
 abstract class IEEEIdentifier
 {
-
     private ubyte[] _bytes;
 
-    /**
-        Returns the bytes of an IEEE Identifier.
-        Returns: The bytes of an IEEE Identifier.
-    */
+    /// Returns: The bytes of an IEEE Identifier.
     public @property
     ubyte[] bytes()
     {
@@ -103,7 +78,7 @@ abstract class IEEEIdentifier
             A boolean describing whether a the address is a unicast address.
     */
     final public @property
-    bool isUnicast()
+    bool unicast()
     {
         return ((this._bytes[0] & 0x01) == ExtendedUniqueIdentifierBroadcastScope.unicast);
     }
@@ -118,7 +93,7 @@ abstract class IEEEIdentifier
             A boolean describing whether a the address is a multicast address.
     */
     final public @property
-    bool isMulticast()
+    bool multicast()
     {
         return ((this._bytes[0] & 0x01) == ExtendedUniqueIdentifierBroadcastScope.multicast);
     }
@@ -134,7 +109,7 @@ abstract class IEEEIdentifier
             A boolean describing whether a the address is a globally registered.
     */
     final public @property
-    bool isGloballyRegistered()
+    bool global()
     {
         return ((this._bytes[0] & 0x02) == ExtendedUniqueIdentifierRegistration.global);
     }
@@ -150,13 +125,10 @@ abstract class IEEEIdentifier
             A boolean describing whether a the address is a locally registered.
     */
     final public @property
-    bool isLocallyRegistered()
+    bool local()
     {
         return ((this._bytes[0] & 0x02) == ExtendedUniqueIdentifierRegistration.local);
     }
-    
-    // abstract public @property bool isValid();
-    // abstract public @property bool isInvalid();
     
     /**
         Enables comparison of any two IEEE Identifiers. This simply compares the
@@ -185,27 +157,14 @@ class CompanyID : IEEEIdentifier
 {
     /// The length in bits of this IEEE Identifier: 24
     immutable static public int bitLength = 24;
-    /// The length in bytes of this IEEE Identifier: 3
-    immutable static public int byteLength = 3;
 
     /**
         Constructor for a Company ID (CID), which is 24-bits long.
-        Params:
-            byte1 = the first byte
-            byte2 = the second byte
-            byte3 = the third byte
         Returns: A Company ID
-        Throws:
-            IEEEIdentifierException if the second least significant bit of the
-                first octet is cleared
     */
     this(ubyte byte1, ubyte byte2, ubyte byte3)
     {
-        if (bytes[0] & 0x02)
-            throw new IEEEIdentifierException
-            ("An IEEE Company ID must have the second LSb of the first set.");
-
-        this._bytes = ([byte1] ~ byte2 ~ byte3);
+        this._bytes = ([byte1 | 0x02] ~ byte2 ~ byte3);
     }
 }
 
@@ -214,16 +173,10 @@ unittest
 {
     CompanyID cid = new CompanyID(0x66, 0x44, 0x22);
     assert(cid.bytes == [ 0x66, 0x44, 0x22 ]);
-    assert(cid.isUnicast == false);
-    assert(cid.isMulticast == true);
-    assert(cid.isLocallyRegistered == true);
-    assert(cid.isGloballyRegistered == false);
-}
-
-/// Throws exception because the 2nd LSb of the first byte must be 0 for a CID.
-unittest
-{
-    assertThrown!IEEEIdentifierException(new CompanyID(0x00, 0x00, 0x00));
+    assert(cid.unicast == true);
+    assert(cid.multicast == false);
+    assert(cid.local == true);
+    assert(cid.global == false);
 }
 
 ///
@@ -250,28 +203,14 @@ class MediaAccessControlLargeIdentifier : MediaAccessControlIdentifier
 {
     /// The length in bits of this IEEE Identifier: 24
     immutable static public int bitLength = 24;
-    /// The length in bits of this IEEE Identifier: 3
-    immutable static public int byteLength = 3;
 
     /**
-        Constructor for a MAC Addresses Large (MA-L) Identifier,
-        which is 24-bits long.
-        Params:
-            byte1 = the first byte
-            byte2 = the second byte
-            byte3 = the third byte
+        Constructor for a MAC Addresses Large (MA-L) Identifier
         Returns: A MA-L Identifier
-        Throws:
-            IEEEIdentifierException if the second least significant bit of the
-                first octet is set
     */
     this(ubyte byte1, ubyte byte2, ubyte byte3)
     {
-        if (!(byte1 & 0x02))
-            throw new IEEEIdentifierException
-            ("An IEEE MA-L must have the second LSb of the first clear.");
-
-        this._bytes = ([byte1] ~ byte2 ~ byte3);
+        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3);
     }
 
     /**
@@ -290,16 +229,10 @@ unittest
 {
     MACLargeIdentifier macid = new MACLargeIdentifier(0x00, 0x00, 0x00);
     assert(macid.bytes == [ 0x00, 0x00, 0x00 ]);
-    assert(macid.isUnicast == true);
-    assert(macid.isMulitcast == false);
-    assert(macid.isGloballyRegistered == true);
-    assert(macid.isLocallyRegistered == false);
-}
-
-/// Throws exception because the 2nd LSb of the first byte must be 1 for a MA-L.
-unittest
-{
-    assertThrown!IEEEIdentifierException(new MACLargeIdentifier(0x02, 0x00, 0x00));
+    assert(macid.unicast == true);
+    assert(macid.multicast == false);
+    assert(macid.global == true);
+    assert(macid.local == false);
 }
 
 ///
@@ -314,29 +247,14 @@ class MediaAccessControlMediumIdentifier : MediaAccessControlIdentifier
 {
     /// The length in bits of this IEEE Identifier: 28
     immutable static public int bitLength = 28;
-    /// The length in bits of this IEEE Identifier: 4
-    immutable static public int byteLength = 4;
 
     /**
-        Constructor for a MAC Addresses Large (MA-M) Identifier,
-        which is 28-bits long.
-        Params:
-            byte1 = the first byte
-            byte2 = the second byte
-            byte3 = the third byte
-            byte4 = the fourth byte
+        Constructor for a MAC Addresses Large (MA-M) Identifier.
         Returns: A MA-M Identifier
-        Throws:
-            IEEEIdentifierException if the second least significant bit of the
-                first octet is set, which would indicate a Company ID + 4 bits.
     */
     this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4)
     {
-        if (!(byte1 & 0x02))
-            throw new IEEEIdentifierException
-            ("An IEEE MA-M must have the second LSb of the first clear.");
-
-        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4);
+        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ (byte4 & 0xF0));
     }
 }
 
@@ -344,18 +262,11 @@ class MediaAccessControlMediumIdentifier : MediaAccessControlIdentifier
 unittest
 {
     MACMediumIdentifier macid = new MACMediumIdentifier(0x00, 0x00, 0x00, 0x00);
-    assert(macid.bytes == [ 0x00, 0x00, 0x00 ]);
-    assert(macid.isUnicast == true);
-    assert(macid.isMulitcast == false);
-    assert(macid.isGloballyRegistered == true);
-    assert(macid.isLocallyRegistered == false);
-}
-
-/// Throws exception because the 2nd LSb of the first byte must be 1 for a MA-M.
-unittest
-{
-    assertThrown!IEEEIdentifierException
-        (new MACMediumIdentifier(0x02, 0x00, 0x00, 0x00));
+    assert(macid.bytes == [ 0x00, 0x00, 0x00, 0x00 ]);
+    assert(macid.unicast == true);
+    assert(macid.multicast == false);
+    assert(macid.global == true);
+    assert(macid.local == false);
 }
 
 ///
@@ -370,30 +281,14 @@ class MediaAccessControlSmallIdentifier : MediaAccessControlIdentifier
 {
     /// The length in bits of this IEEE Identifier: 36
     immutable static public int bitLength = 36;
-    /// The length in bits of this IEEE Identifier: 5
-    immutable static public int byteLength = 5;
 
     /**
-        Constructor for a MAC Addresses Large (MA-S) Identifier,
-        which is 36-bits long.
-        Params:
-            byte1 = the first byte
-            byte2 = the second byte
-            byte3 = the third byte
-            byte4 = the fourth byte
-            byte5 = the fifth byte
+        Constructor for a MAC Addresses Large (MA-S) Identifier
         Returns: A MA-S Identifier
-        Throws:
-            IEEEIdentifierException if the second least significant bit of the
-                first octet is set, which would indicate a Company ID + 12 bits.
     */
     this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5)
     {
-        if (!(byte1 & 0x02))
-            throw new IEEEIdentifierException
-            ("An IEEE MA-M must have the second LSb of the first clear.");
-
-        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4 ~ byte5);
+        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ byte4 ~ byte5);
     }
 
     /**
@@ -411,18 +306,11 @@ class MediaAccessControlSmallIdentifier : MediaAccessControlIdentifier
 unittest
 {
     MACSmallIdentifier macid = new MACSmallIdentifier(0x00, 0x00, 0x00, 0x00, 0x00);
-    assert(macid.bytes == [ 0x00, 0x00, 0x00 ]);
-    assert(macid.isUnicast == true);
-    assert(macid.isMulitcast == false);
-    assert(macid.isGloballyRegistered == true);
-    assert(macid.isLocallyRegistered == false);
-}
-
-/// Throws exception because the 2nd LSb of the first byte must be 1 for a MA-S.
-unittest
-{
-    assertThrown!IEEEIdentifierException
-        (new MACSmallIdentifier(0x02, 0x00, 0x00, 0x00, 0x00));
+    assert(macid.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(macid.unicast == true);
+    assert(macid.multicast == false);
+    assert(macid.global == true);
+    assert(macid.local == false);
 }
 
 /*
@@ -451,27 +339,14 @@ class OrganizationallyUniqueIdentifier24 : OrganizationallyUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 24
     immutable static public int bitLength = 24;
-    /// The length in bytes of this IEEE Identifier: 3
-    immutable static public int byteLength = 3;
 
     /**
         Constructor for a 24-Bit Organizationally Unique Identifier (OUI-24)
-        Params:
-            byte1 = the first byte
-            byte2 = the second byte
-            byte3 = the third byte
-        Returns: A 24-Bit Organizationally Unique Identifier (OUI-24) 
-        Throws:
-            IEEEIdentifierException if the second least significant bit of the
-                first octet is set, which would indicate a Company ID + 12 bits.
+        Returns: A 24-Bit Organizationally Unique Identifier (OUI-24)
     */
     this (ubyte byte1, ubyte byte2, ubyte byte3)
     {
-        if (!(byte1 & 0x02))
-            throw new IEEEIdentifierException
-            ("An IEEE OUI-24 must have the second LSb of the first clear.");
-
-            this._bytes = ([byte1] ~ byte2 ~ byte3);
+        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3);
     }
 
     /**
@@ -490,16 +365,10 @@ unittest
 {
     OUI24 oui = new OUI24(0x00, 0x00, 0x00);
     assert(oui.bytes == [ 0x00, 0x00, 0x00 ]);
-    assert(oui.isUnicast == true);
-    assert(oui.isMulticast == false);
-    assert(oui.isGloballyRegistered == true);
-    assert(oui.isLocallyRegistered == false);
-}
-
-/// Throws exception because the 2nd LSb of the first byte must be 0 for an OUI.
-unittest
-{
-    assertThrown!IEEEIdentifierException(new OUI24(0x02, 0x44, 0xFD));
+    assert(oui.unicast == true);
+    assert(oui.multicast == false);
+    assert(oui.global == true);
+    assert(oui.local == false);
 }
 
 ///
@@ -512,24 +381,14 @@ class OrganizationallyUniqueIdentifier36 : OrganizationallyUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 36
     immutable static public int bitLength = 36;
-    /// The length in bytes of this IEEE Identifier: 5
-    immutable static public int byteLength = 5;
 
     /**
         Constructor for a 36-Bit Organizationally Unique Identifier (OUI-36)
-        Params:
-            bytes = An array of unsigned bytes representing the bytes of the OUI
         Returns: A 36-Bit Organizationally Unique Identifier (OUI-36) 
-        Throws:
-            IEEEIdentifierException if an incorrect number of bytes is supplied.
     */
-    this (ubyte[] bytes ...)
+    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5)
     {
-        if (bytes.length != this.byteLength)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = bytes;
+        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ byte4 ~ (byte5 & 0xF0));
     }
 
     /**
@@ -541,6 +400,17 @@ class OrganizationallyUniqueIdentifier36 : OrganizationallyUniqueIdentifier
     {
         return new MediaAccessControlSmallIdentifier(this.bytes);
     }
+}
+
+///
+unittest
+{
+    OUI36 oui = new OUI36(0x00, 0x00, 0x00, 0x00, 0x00);
+    assert(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(oui.unicast == true);
+    assert(oui.multicast == false);
+    assert(oui.global == true);
+    assert(oui.local == false);
 }
 
 ///
@@ -563,126 +433,83 @@ class ExtendedUniqueIdentifier48 : ExtendedUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 48
     immutable static public int bitLength = 48;
-    /// The length in bytes of this IEEE Identifier: 6
-    immutable static public int byteLength = 6;
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            bytes = An array of unsigned bytes representing the bytes of the EUI
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if bytes is not exactly six bytes.
     */
-    this (ubyte[] bytes ...)
+    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5, ubyte byte6)
     {
-        if (bytes.length != this.byteLength)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = bytes;
+        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4 ~ byte5 ~ byte6);
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            oui = A 24-bit Organizationally Unique Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if extension is not exactly three bytes
     */
-    this(OUI24 oui, ubyte[] extension ...)
+    this(OUI24 oui, ubyte byte4, ubyte byte5, ubyte byte6)
     {
-        if (extension.length != 3)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = (oui.bytes ~ extension);
+        this._bytes = (oui.bytes ~ byte4 ~ byte5 ~ byte6);
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            oui = A 36-bit Organizationally Unique Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if extension is not exactly two bytes
     */
-    this(OUI36 oui, ubyte[] extension ...)
+    this(OUI36 oui, ubyte nybble5, ubyte byte6)
     //TODO: Contract that verifies that trailing bits of oui are zeroes
     {
-        if (extension.length != 2)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             oui.bytes[0 .. 4] ~
-            ((oui.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1];
+            ((oui.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
+            byte6;
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            macid = A MA-L Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if extension is not exactly two bytes
     */
-    this(MACLargeIdentifier macid, ubyte[] extension ...)
+    this(MACLargeIdentifier macid, ubyte byte4, ubyte byte5, ubyte byte6)
     {
-        if (extension.length != 3)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = (macid.bytes ~ extension);
+        this._bytes = (macid.bytes ~ byte4 ~ byte5 ~ byte6);
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            macid = A MA-M Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if extension is not exactly three bytes
     */
-    this(MACMediumIdentifier macid, ubyte[] extension ...)
+    this(MACMediumIdentifier macid, ubyte nybble4, ubyte byte5, ubyte byte6)
     {
-        if (extension.length != 3)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             macid.bytes[0 .. 3] ~
-            ((macid.bytes[3] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1 .. $];
+            ((macid.bytes[3] & 0xF0) | (nybble4 & 0x0F)) ~
+            byte5 ~ 
+            byte6;
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
-        Params:
-            macid = A MA-S Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
-        Throws:
-            IEEEIdentifierException if extension is not exactly two bytes
     */
-    this(MACSmallIdentifier macid, ubyte[] extension ...)
+    this(MACSmallIdentifier macid, ubyte nybble5, ubyte byte6)
     {
-        if (extension.length != 2)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             macid.bytes[0 .. 4] ~
-            ((macid.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1];
+            ((macid.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
+            byte6;
     }
 
+}
+
+///
+unittest
+{
+    EUI48 oui = new EUI48(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    assert(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(oui.unicast == true);
+    assert(oui.multicast == false);
+    assert(oui.global == true);
+    assert(oui.local == false);
 }
 
 //NOTE: This class cannot be constructed with a CompanyID.
@@ -691,126 +518,91 @@ class ExtendedUniqueIdentifier64 : ExtendedUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 64
     immutable static public int bitLength = 64;
-    /// The length in bits of this IEEE Identifier: 8
-    immutable static public int byteLength = 8;
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            bytes = An array of unsigned bytes representing the bytes of the EUI
         Returns: A 48-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if bytes is not exactly eight bytes.
     */
-    this (ubyte[] bytes ...)
+    this
+    (
+        ubyte byte1,
+        ubyte byte2,
+        ubyte byte3,
+        ubyte byte4,
+        ubyte byte5,
+        ubyte byte6,
+        ubyte byte7,
+        ubyte byte8
+    )
     {
-        if (bytes.length != this.byteLength)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = bytes;
+        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            oui = A 24-bit Organizationally Unique Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if extension is not exactly five bytes
     */
-    this(OUI24 oui, ubyte[] extension ...)
+    this(OUI24 oui, ubyte byte4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
     {
-        if (extension.length != 5)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = (oui.bytes ~ extension);
+        this._bytes = (oui.bytes ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            oui = A 36-bit Organizationally Unique Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if extension is not exactly five bytes
     */
-    this(OUI36 oui, ubyte[] extension ...)
+    this(OUI36 oui, ubyte nybble5, ubyte byte6, ubyte byte7, ubyte byte8)
     //TODO: Contract that verifies that trailing bits of oui are zeroes
     {
-        if (extension.length != 4)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             oui.bytes[0 .. 4] ~
-            ((oui.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1 .. $];
+            ((oui.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
+            byte6 ~
+            byte7 ~
+            byte8;
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            macid = A MA-L Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if extension is not exactly three bytes
     */
-    this(MACLargeIdentifier macid, ubyte[] extension ...)
+    this(MACLargeIdentifier macid, ubyte byte4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
     {
-        if (extension.length != 3)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
-        this._bytes = (macid.bytes ~ extension);
+        this._bytes = (macid.bytes ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            macid = A MA-M Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if extension is not exactly three bytes
     */
-    this(MACMediumIdentifier macid, ubyte[] extension ...)
+    this(MACMediumIdentifier macid, ubyte nybble4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
     {
-        if (extension.length != 3)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             macid.bytes[0 .. 3] ~
-            ((macid.bytes[3] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1 .. $];
+            ((macid.bytes[3] & 0xF0) | (nybble4 & 0x0F)) ~
+            byte5 ~ byte6 ~ byte7 ~ byte8;
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
-        Params:
-            macid = A MA-S Identifier
-            bytes = An array of unsigned bytes representing the extension
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
-        Throws:
-            IEEEIdentifierException if extension is not exactly two bytes
     */
-    this(MACSmallIdentifier macid, ubyte[] extension ...)
+    this(MACSmallIdentifier macid, ubyte nybble5, ubyte byte6, ubyte byte7, ubyte byte8)
     {
-        if (extension.length != 2)
-            throw new IEEEIdentifierException
-            ("Incorrect number of bytes for this kind of IEEE Identifier.");
-
         this._bytes =
             macid.bytes[0 .. 4] ~
-            ((macid.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
-            extension[1 .. $];
+            ((macid.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
+            byte6 ~ byte7 ~ byte8;
     }
 }
 
-
-//TODO: isCompanyID(ubyte[] ...) and isOUI(ubyte[] ...)
+///
+unittest
+{
+    EUI64 oui = new EUI64(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    assert(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(oui.unicast == true);
+    assert(oui.multicast == false);
+    assert(oui.global == true);
+    assert(oui.local == false);
+}
