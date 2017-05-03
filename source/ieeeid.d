@@ -1,29 +1,32 @@
 /**
     Provides strong types for identifiers invented by the
-    $(LINK2 https://www.ieee.org/index.html, Institute of Electrical and Electronics Engineers (IEEE)).
-    Most notable among its functionality is the ExtendedUniqueIdentifier48 class,
+    $(LINK2 https://www.ieee.org/index.html,
+    Institute of Electrical and Electronics Engineers (IEEE)).
+    Notable among its functionality is the ExtendedUniqueIdentifier48 class,
     which is technically the same thing as a MAC address, but the term
     'MAC Address' is deprecated by the IEEE in favor of the
     'Extended Unique Identifier' (EUI-48), so this library does not use the term
     or provide any aliases for that term.
 
-    The term 'EUI-48' is trademarked by the IEEE. From their
-    $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui48.pdf,
-        Guidelines for 48-Bit Global Identifier (EUI-48)),
+    The terms 'EUI-48' and 'EUI-64' are trademarked by the IEEE. From their
+    $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui.pdf,
+    Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID
+    (CID)),
     $(BR)
     $(P
         $(I
-            "The term EUI-48 is trademarked by IEEE and should be so identified. Organizations
-            are allowed limited use of this term for commercial purposes. Where such use is
-            identification of features or capabilities specified within a standard or for claiming
-            compliance to an IEEE standard this may be done without approval of IEEE, but
-            other use of this term must be reviewed and approved by the IEEE RAC."
+            "The terms EUI-48 and EUI-64 are trademarked by IEEE. Companies are 
+            allowed limited use of these terms for commercial purposes. Where
+            such use is identification of features or capabilities specified
+            within a standard or for claiming compliance to an IEEE standard
+            this may be done without approval of IEEE, but other use of this
+            term must be reviewed and approved by the IEEE RAC."
         )
     )
 
     Author: Jonathan M. Wilbur
     Copyright: Jonathan M. Wilbur
-    Date: April 30th, 2017
+    Date: May 2nd, 2017
     License: $(LINK2 http://www.boost.org/LICENSE_1_0.txt, Boost License 1.0)
     Standards:
         $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui.pdf,
@@ -32,24 +35,39 @@
             Guidelines for 48-Bit Global Identifier (EUI-48))
         $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui64.pdf,
             Guidelines for 64-Bit Global Identifier (EUI-64))
-    Version: 0.1.0
+    Version: 0.2.0
     See_Also:
         $(LINK2 https://en.wikipedia.org/wiki/MAC_address, Wikipedia Page for MAC Address)
 */
+//TODO: ModifiedExtendedUniqueIdentifier64
+//TODO: colonDelimitedNotation() (Might be bit-reversed)
+//TODO: dashDelimitedNotation()
+/*
+    NOTE: Reading this Wiki gives me the impression that colon delimiters denote
+    bit-reversed notation, where as dash delimiters denote normal / canonical
+    notation. https://en.wikipedia.org/wiki/Organizationally_unique_identifier
+*/
 //NOTE: The first 24-bits of an MA-S and MA-M are an OUI assigned to the IEEE RA itself.
+/*
+    REVIEW: Affirm that EUIs cannot be constructed with a CompanyID.
+*/
+/*
+    REVIEW: There are some additional identifiers that use EUI-64 at the end of
+    the EUI-64 document. Consider writing code for them as well.
+*/
+//NOTE: The end of the OUI / CID document clarifies the defs of the identifiers.
 module ieeeid;
-import std.traits : Unqual;
-import std.format : sformat;
+// import std.traits : Unqual; //REVIEW: Should this be used to generalize args?
 
 // static assert(0, "ieeeid.d is not thoroughly unit-tested or reviewed, so refused to compile.");
 
-private enum ExtendedUniqueIdentifierBroadcastScope : ubyte
+private enum IEEEIdentifierBroadcastScope : ubyte
 {
     unicast = 0x00,
     multicast = 0x01
 }
 
-private enum ExtendedUniqueIdentifierRegistration : ubyte
+private enum IEEEIdentifierRegistration : ubyte
 {
     global = 0x00,
     local = 0x02
@@ -59,7 +77,7 @@ private enum ExtendedUniqueIdentifierRegistration : ubyte
 /// An abstract class from which all IEEE Identifiers will inherit.
 abstract class IEEEIdentifier
 {
-    private ubyte[] _bytes;
+    public ubyte[] _bytes; //TODO: Convert this back to private!
 
     /// Returns: The bytes of an IEEE Identifier.
     public @property
@@ -80,7 +98,7 @@ abstract class IEEEIdentifier
     final public @property
     bool unicast()
     {
-        return ((this._bytes[0] & 0x01) == ExtendedUniqueIdentifierBroadcastScope.unicast);
+        return ((this._bytes[0] & 0x01) == IEEEIdentifierBroadcastScope.unicast);
     }
 
     /**
@@ -95,7 +113,7 @@ abstract class IEEEIdentifier
     final public @property
     bool multicast()
     {
-        return ((this._bytes[0] & 0x01) == ExtendedUniqueIdentifierBroadcastScope.multicast);
+        return ((this._bytes[0] & 0x01) == IEEEIdentifierBroadcastScope.multicast);
     }
 
     /**
@@ -111,7 +129,7 @@ abstract class IEEEIdentifier
     final public @property
     bool global()
     {
-        return ((this._bytes[0] & 0x02) == ExtendedUniqueIdentifierRegistration.global);
+        return ((this._bytes[0] & 0x02) == IEEEIdentifierRegistration.global);
     }
 
     /**
@@ -127,9 +145,9 @@ abstract class IEEEIdentifier
     final public @property
     bool local()
     {
-        return ((this._bytes[0] & 0x02) == ExtendedUniqueIdentifierRegistration.local);
+        return ((this._bytes[0] & 0x02) == IEEEIdentifierRegistration.local);
     }
-    
+
     /**
         Enables comparison of any two IEEE Identifiers. This simply compares the
         bytes of each IEEE Identifier and returns true if they are all equal.
@@ -162,10 +180,16 @@ class CompanyID : IEEEIdentifier
         Constructor for a Company ID (CID), which is 24-bits long.
         Returns: A Company ID
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3)
+    this(ubyte[3] bytes ...)
     {
-        this._bytes = ([byte1 | 0x02] ~ byte2 ~ byte3);
+        this._bytes = [ (bytes[0] | 0x02), bytes[1], bytes[2] ];
     }
+
+    invariant
+    {
+        assert(this._bytes.length == 3, "Invalid length encountered.");
+    }
+
 }
 
 ///
@@ -208,9 +232,9 @@ class MediaAccessControlLargeIdentifier : MediaAccessControlIdentifier
         Constructor for a MAC Addresses Large (MA-L) Identifier
         Returns: A MA-L Identifier
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3)
+    this(ubyte[3] bytes ...)
     {
-        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3);
+        this._bytes = [ (bytes[0] & 0xFC), bytes[1], bytes[2] ];
     }
 
     /**
@@ -222,6 +246,12 @@ class MediaAccessControlLargeIdentifier : MediaAccessControlIdentifier
     {
         return new OrganizationallyUniqueIdentifier24(this.bytes);
     }
+
+    invariant
+    {
+        assert(this._bytes.length == 3, "Invalid length encountered.");
+    }
+
 }
 
 ///
@@ -252,9 +282,15 @@ class MediaAccessControlMediumIdentifier : MediaAccessControlIdentifier
         Constructor for a MAC Addresses Large (MA-M) Identifier.
         Returns: A MA-M Identifier
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4)
+    this(ubyte[4] bytes ...)
     {
-        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ (byte4 & 0xF0));
+        this._bytes = [ (bytes[0] & 0xFC), bytes[1], bytes[2], (bytes[3] & 0xF0) ];
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 4, "Invalid length encountered.");
+        assert(!(this._bytes[$-1] & 0x0F), "Last four bits were not cleared!");
     }
 }
 
@@ -286,9 +322,9 @@ class MediaAccessControlSmallIdentifier : MediaAccessControlIdentifier
         Constructor for a MAC Addresses Large (MA-S) Identifier
         Returns: A MA-S Identifier
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5)
+    this(ubyte[5] bytes ...)
     {
-        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ byte4 ~ byte5);
+        this._bytes = [ (bytes[0] & 0xFC), bytes[1], bytes[2], bytes[3], (bytes[4] & 0xF0) ];
     }
 
     /**
@@ -300,6 +336,13 @@ class MediaAccessControlSmallIdentifier : MediaAccessControlIdentifier
     {
         return new OrganizationallyUniqueIdentifier36(this.bytes);
     }
+
+    invariant
+    {
+        assert(this._bytes.length == 5, "Invalid length encountered.");
+        assert(!(this._bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+
 }
 
 ///
@@ -331,7 +374,7 @@ abstract class OrganizationallyUniqueIdentifier : IEEEIdentifier
 alias OUI24 = OrganizationallyUniqueIdentifier24;
 /**
     A class for the 24-bit Organizationally Unique Identifier (OUI-24) as
-    assigned by the IEEE. Note that, though this is the same size as a Company 
+    assigned by the IEEE. Note that, though this is the same size as a Company
     ID (CID), it is not the same thing. Thus, there is no casting permitted
     between this instances of this class and instances of CompanyID.
 */
@@ -344,9 +387,9 @@ class OrganizationallyUniqueIdentifier24 : OrganizationallyUniqueIdentifier
         Constructor for a 24-Bit Organizationally Unique Identifier (OUI-24)
         Returns: A 24-Bit Organizationally Unique Identifier (OUI-24)
     */
-    this (ubyte byte1, ubyte byte2, ubyte byte3)
+    this(ubyte[3] bytes ...)
     {
-        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3);
+        this._bytes = [ (bytes[0] & 0xFC), bytes[1], bytes[2] ];
     }
 
     /**
@@ -358,6 +401,12 @@ class OrganizationallyUniqueIdentifier24 : OrganizationallyUniqueIdentifier
     {
         return new MediaAccessControlLargeIdentifier(this.bytes);
     }
+
+    invariant
+    {
+        assert(this._bytes.length == 3, "Invalid length encountered.");
+    }
+
 }
 
 ///
@@ -384,11 +433,11 @@ class OrganizationallyUniqueIdentifier36 : OrganizationallyUniqueIdentifier
 
     /**
         Constructor for a 36-Bit Organizationally Unique Identifier (OUI-36)
-        Returns: A 36-Bit Organizationally Unique Identifier (OUI-36) 
+        Returns: A 36-Bit Organizationally Unique Identifier (OUI-36)
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5)
+    this(ubyte[5] bytes ...)
     {
-        this._bytes = ([byte1 & 0xFC] ~ byte2 ~ byte3 ~ byte4 ~ (byte5 & 0xF0));
+        this._bytes = [ (bytes[0] & 0xFC), bytes[1], bytes[2], bytes[3], (bytes[4] & 0xF0) ];
     }
 
     /**
@@ -399,6 +448,12 @@ class OrganizationallyUniqueIdentifier36 : OrganizationallyUniqueIdentifier
     MediaAccessControlSmallIdentifier opCast(MediaAccessControlSmallIdentifier)()
     {
         return new MediaAccessControlSmallIdentifier(this.bytes);
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 5, "Invalid length encountered.");
+        assert(!(this._bytes[$-1] & 0x0F), "Last four bits were not cleared!");
     }
 }
 
@@ -414,6 +469,91 @@ unittest
 }
 
 ///
+alias CDI = ContextDependentIdentifier;
+/// An abstract class from which both the CDI-32 and CDI-40 will inherit.
+abstract class ContextDependentIdentifier : IEEEIdentifier
+{
+    // Nothing here.
+}
+
+///
+alias CDI32 = ContextDependentIdentifier32;
+/**
+    A 32-Bit Context Dependent Identifier.
+*/
+class ContextDependentIdentifier32 : ContextDependentIdentifier
+{
+    /**
+        Constructor for a 32-Bit Context Dependent Identifier
+        Returns: A 32-Bit Context Dependent Identifier
+    */
+    this(ubyte[4] bytes ...)
+    {
+        this._bytes = bytes;
+    }
+
+    /**
+        Constructor for a 32-Bit Context Dependent Identifier
+        Returns: A 32-Bit Context Dependent Identifier
+    */
+    this(OUI oui, ubyte[1] extension ...)
+    {
+        this._bytes = (oui.bytes ~ extension);
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 4, "Invalid length encountered.");
+    }
+
+}
+
+///
+alias CDI40 = ContextDependentIdentifier40;
+/**
+    A 40-Bit Context Dependent Identifier.
+*/
+class ContextDependentIdentifier40 : ContextDependentIdentifier
+{
+    /**
+        Constructor for a 40-Bit Context Dependent Identifier
+        Returns: A 40-Bit Context Dependent Identifier
+    */
+    this(ubyte[5] bytes ...)
+    {
+        this._bytes = bytes;
+    }
+
+    /**
+        Constructor for a 40-Bit Context Dependent Identifier
+        Returns: A 40-Bit Context Dependent Identifier
+    */
+    this(OUI24 oui, ubyte[2] extension ...)
+    {
+        this._bytes = (oui.bytes ~ extension);
+    }
+
+    /**
+        Constructor for a 40-Bit Context Dependent Identifier
+        Returns: A 40-Bit Context Dependent Identifier
+    */
+    this(OUI36 oui, ubyte[1] extension ...)
+    in
+    {
+        assert(!(oui.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
+    {
+        this._bytes = (oui.bytes[0 .. $-1] ~ ((extension[0] & 0x0F) | oui.bytes[$-1]));
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 5, "Invalid length encountered.");
+    }
+}
+
+///
 alias EUI = ExtendedUniqueIdentifier;
 /// An abstract class from which both the EUI-48 and EUI-64 will inherit
 abstract class ExtendedUniqueIdentifier : IEEEIdentifier
@@ -421,14 +561,16 @@ abstract class ExtendedUniqueIdentifier : IEEEIdentifier
     // Nothing here.
 }
 
-//NOTE: This class cannot be constructed with a CompanyID.
-/*REVIEW:
-    Is it better to have a variadic constructor that throws exceptions if the
-    correct length of the variadic array is not supplied, or to have a fixed
-    number of arguments in the constructor--potentially leading to RangeErrors
-    by forcing the user to draw elements from an array?
-*/
+//REVIEW: Can this class be constructed with a CompanyID?
+///
 alias EUI48 = ExtendedUniqueIdentifier48;
+/**
+    A 48-Bit Extended Unique Identifier (EUI-48). This is the same thing as a
+    Media Access Control (MAC) Address, but the term "MAC Address" is
+    deprecated by the IEEE, so this library does not use this term in any way.
+
+    This class can be cast to a 64-Bit Extended Unique Identifier (EUI-64).
+*/
 class ExtendedUniqueIdentifier48 : ExtendedUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 48
@@ -438,65 +580,88 @@ class ExtendedUniqueIdentifier48 : ExtendedUniqueIdentifier
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(ubyte byte1, ubyte byte2, ubyte byte3, ubyte byte4, ubyte byte5, ubyte byte6)
+    this(ubyte[6] fullbytes ...)
     {
-        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4 ~ byte5 ~ byte6);
+        /*
+            NOTE: For some reason, I have to append bytes to this._bytes. If I
+            do not do this, it sets this._bytes to what appears to be either the
+            first or last six bytes of a memory address.
+        */
+        this._bytes ~= fullbytes;
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(OUI24 oui, ubyte byte4, ubyte byte5, ubyte byte6)
+    this(OUI24 oui, ubyte[3] extension ...)
     {
-        this._bytes = (oui.bytes ~ byte4 ~ byte5 ~ byte6);
+        this._bytes = (oui.bytes ~ extension);
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(OUI36 oui, ubyte nybble5, ubyte byte6)
-    //TODO: Contract that verifies that trailing bits of oui are zeroes
+    this(OUI36 oui, ubyte[2] extension ...)
+    in
+    {
+        assert(!(oui.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             oui.bytes[0 .. 4] ~
-            ((oui.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
-            byte6;
+            ((oui.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1];
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(MACLargeIdentifier macid, ubyte byte4, ubyte byte5, ubyte byte6)
+    this(MACLargeIdentifier macid, ubyte[3] extension ...)
     {
-        this._bytes = (macid.bytes ~ byte4 ~ byte5 ~ byte6);
+        this._bytes = (macid.bytes ~ extension);
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(MACMediumIdentifier macid, ubyte nybble4, ubyte byte5, ubyte byte6)
+    this(MACMediumIdentifier macid, ubyte[3] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             macid.bytes[0 .. 3] ~
-            ((macid.bytes[3] & 0xF0) | (nybble4 & 0x0F)) ~
-            byte5 ~ 
-            byte6;
+            ((macid.bytes[3] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
     }
 
     /**
         Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
         Returns: A 48-Bit Extended Unique Identifier (EUI-48)
     */
-    this(MACSmallIdentifier macid, ubyte nybble5, ubyte byte6)
+    this(MACSmallIdentifier macid, ubyte[2] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             macid.bytes[0 .. 4] ~
-            ((macid.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
-            byte6;
+            ((macid.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1];
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 6, "Invalid length encountered.");
     }
 
 }
@@ -504,16 +669,24 @@ class ExtendedUniqueIdentifier48 : ExtendedUniqueIdentifier
 ///
 unittest
 {
-    EUI48 oui = new EUI48(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-    assert(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
-    assert(oui.unicast == true);
-    assert(oui.multicast == false);
-    assert(oui.global == true);
-    assert(oui.local == false);
+    EUI48 eui = new EUI48(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    assert(eui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(eui.unicast == true);
+    assert(eui.multicast == false);
+    assert(eui.global == true);
+    assert(eui.local == false);
 }
 
-//NOTE: This class cannot be constructed with a CompanyID.
+//NOTE: ExtendedUniqueIdentifier60 is not implemented because it is deprecated.
+
+///
 alias EUI64 = ExtendedUniqueIdentifier64;
+/**
+    A 64-Bit Extended Unique Identifier (EUI-64). This class can be created by
+    casting from a 48-Bit Extended Unique Identifier, but a 48-Bit Extended
+    Unique Identifier cannot be created from this class. (The cast is
+    $(I irreversable), in other words.)
+*/
 class ExtendedUniqueIdentifier64 : ExtendedUniqueIdentifier
 {
     /// The length in bits of this IEEE Identifier: 64
@@ -523,77 +696,202 @@ class ExtendedUniqueIdentifier64 : ExtendedUniqueIdentifier
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 48-Bit Extended Unique Identifier (EUI-64)
     */
-    this
-    (
-        ubyte byte1,
-        ubyte byte2,
-        ubyte byte3,
-        ubyte byte4,
-        ubyte byte5,
-        ubyte byte6,
-        ubyte byte7,
-        ubyte byte8
-    )
+    this(ubyte[8] bytes ...)
     {
-        this._bytes = ([byte1] ~ byte2 ~ byte3 ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
+        /*
+            NOTE: For some reason, I have to append bytes to this._bytes. If I
+            do not do this, it sets this._bytes to what appears to be either the
+            first or last six bytes of a memory address.
+        */
+        this._bytes ~= bytes;
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
     */
-    this(OUI24 oui, ubyte byte4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
+    this(OUI24 oui, ubyte[5] extension ...)
     {
-        this._bytes = (oui.bytes ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
+        this._bytes = (oui.bytes ~ extension);
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
     */
-    this(OUI36 oui, ubyte nybble5, ubyte byte6, ubyte byte7, ubyte byte8)
-    //TODO: Contract that verifies that trailing bits of oui are zeroes
+    this(OUI36 oui, ubyte[4] extension ...)
+    in
+    {
+        assert(!(oui.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             oui.bytes[0 .. 4] ~
-            ((oui.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
-            byte6 ~
-            byte7 ~
-            byte8;
+            ((oui.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
     */
-    this(MACLargeIdentifier macid, ubyte byte4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
+    this(MACLargeIdentifier macid, ubyte[5] extension ...)
     {
-        this._bytes = (macid.bytes ~ byte4 ~ byte5 ~ byte6 ~ byte7 ~ byte8);
+        this._bytes = (macid.bytes ~ extension);
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
     */
-    this(MACMediumIdentifier macid, ubyte nybble4, ubyte byte5, ubyte byte6, ubyte byte7, ubyte byte8)
+    this(MACMediumIdentifier macid, ubyte[5] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             macid.bytes[0 .. 3] ~
-            ((macid.bytes[3] & 0xF0) | (nybble4 & 0x0F)) ~
-            byte5 ~ byte6 ~ byte7 ~ byte8;
+            ((macid.bytes[3] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
     }
 
     /**
         Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
         Returns: A 64-Bit Extended Unique Identifier (EUI-64)
     */
-    this(MACSmallIdentifier macid, ubyte nybble5, ubyte byte6, ubyte byte7, ubyte byte8)
+    this(MACSmallIdentifier macid, ubyte[4] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
     {
         this._bytes =
             macid.bytes[0 .. 4] ~
-            ((macid.bytes[4] & 0xF0) | (nybble5 & 0x0F)) ~
-            byte6 ~ byte7 ~ byte8;
+            ((macid.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
     }
+
+    invariant
+    {
+        assert(this._bytes.length == 8, "Invalid length encountered.");
+    }
+
+}
+
+///
+unittest
+{
+    EUI64 oui = new EUI64(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+    assert(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+    assert(oui.unicast == true);
+    assert(oui.multicast == false);
+    assert(oui.global == true);
+    assert(oui.local == false);
+}
+
+///
+alias MEUI64 = ModifiedExtendedUniqueIdentifier64;
+/**
+    The Modified Extended Unique Identifier. This differs from the EUI-64 only
+    by the global/local bit being inverted. This is used by IPv6.
+*/
+class ModifiedExtendedUniqueIdentifier64 : ExtendedUniqueIdentifier
+{
+    /// The length in bits of this IEEE Identifier: 64
+    immutable static public int bitLength = 64;
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 48-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(ubyte[8] bytes ...)
+    {
+        /*
+            NOTE: For some reason, I have to append bytes to this._bytes. If I
+            do not do this, it sets this._bytes to what appears to be either the
+            first or last six bytes of a memory address.
+        */
+        this._bytes ~= bytes;
+    }
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 64-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(OUI24 oui, ubyte[5] extension ...)
+    {
+        this._bytes = (oui.bytes ~ extension);
+    }
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 64-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(OUI36 oui, ubyte[4] extension ...)
+    in
+    {
+        assert(!(oui.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
+    {
+        this._bytes =
+            oui.bytes[0 .. 4] ~
+            ((oui.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
+    }
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 64-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(MACLargeIdentifier macid, ubyte[5] extension ...)
+    {
+        this._bytes = (macid.bytes ~ extension);
+    }
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 64-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(MACMediumIdentifier macid, ubyte[5] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
+    {
+        this._bytes =
+            macid.bytes[0 .. 3] ~
+            ((macid.bytes[3] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
+    }
+
+    /**
+        Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+        Returns: A 64-Bit Modified Extended Unique Identifier (MEUI-64)
+    */
+    this(MACSmallIdentifier macid, ubyte[4] extension ...)
+    in
+    {
+        assert(!(macid.bytes[$-1] & 0x0F), "Last four bits were not cleared!");
+    }
+    body
+    {
+        this._bytes =
+            macid.bytes[0 .. 4] ~
+            ((macid.bytes[4] & 0xF0) | (extension[0] & 0x0F)) ~
+            extension[1 .. $];
+    }
+
+    invariant
+    {
+        assert(this._bytes.length == 8, "Invalid length encountered.");
+    }
+
 }
 
 ///

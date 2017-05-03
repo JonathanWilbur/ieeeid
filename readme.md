@@ -3,8 +3,8 @@
 * Author: Jonathan M. Wilbur
 * Copyright: Jonathan M. Wilbur
 * License: [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt)
-* Date: April 29th, 2017
-* Version: 0.1.0
+* Date: May 2nd, 2017
+* Version: 0.2.0
 
 **This version is not ready for use in production. It is not thoroughly tested,
 and does not include all the expected features. Please wait until the release
