@@ -15,7 +15,7 @@
     $(BR)
     $(P
         $(I
-            "The terms EUI-48 and EUI-64 are trademarked by IEEE. Companies are 
+            "The terms EUI-48 and EUI-64 are trademarked by IEEE. Companies are
             allowed limited use of these terms for commercial purposes. Where
             such use is identification of features or capabilities specified
             within a standard or for claiming compliance to an IEEE standard
@@ -35,13 +35,10 @@
             Guidelines for 48-Bit Global Identifier (EUI-48))
         $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui64.pdf,
             Guidelines for 64-Bit Global Identifier (EUI-64))
-    Version: 0.2.0
+    Version: 0.2.1
     See_Also:
         $(LINK2 https://en.wikipedia.org/wiki/MAC_address, Wikipedia Page for MAC Address)
 */
-//TODO: ModifiedExtendedUniqueIdentifier64
-//TODO: colonDelimitedNotation() (Might be bit-reversed)
-//TODO: dashDelimitedNotation()
 /*
     NOTE: Reading this Wiki gives me the impression that colon delimiters denote
     bit-reversed notation, where as dash delimiters denote normal / canonical
@@ -49,17 +46,23 @@
 */
 //NOTE: The first 24-bits of an MA-S and MA-M are an OUI assigned to the IEEE RA itself.
 /*
-    REVIEW: Affirm that EUIs cannot be constructed with a CompanyID.
+    FIXME: CIDs actually can be used to create MAC addresses, but not EUIs.
+    Maybe for the sake of this library, however, you should be able to create
+    EUIs with CIDs.
 */
 /*
     REVIEW: There are some additional identifiers that use EUI-64 at the end of
     the EUI-64 document. Consider writing code for them as well.
 */
+//REVIEW: Do I need to disable default constructors?
 //NOTE: The end of the OUI / CID document clarifies the defs of the identifiers.
+/*
+    REVIEW: According to page 12 of the OUI document, there are 36-bit CIDs,
+    but I have not found any documentation of them.
+*/
+//TODO: Function for turning on multicast?
 module ieeeid;
 // import std.traits : Unqual; //REVIEW: Should this be used to generalize args?
-
-// static assert(0, "ieeeid.d is not thoroughly unit-tested or reviewed, so refused to compile.");
 
 private enum IEEEIdentifierBroadcastScope : ubyte
 {
@@ -170,6 +173,12 @@ alias CID = CompanyID;
     Though this type occupies the same 24-bit selection space that MA-L
     identifiers occupy, it may not be used for the construction of MAC (Media
     Access Control) addresses.
+
+    From page 12 of
+    $(LINK2 https://standards.ieee.org/develop/regauth/tut/eui.pdf,
+        Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)):
+    "The Company ID (CID) is a 24-bit globally-unique assigned number that has
+    the X bit set to 1 and the M bit set to 0..."
 */
 class CompanyID : IEEEIdentifier
 {
@@ -659,6 +668,12 @@ class ExtendedUniqueIdentifier48 : ExtendedUniqueIdentifier
             extension[1];
     }
 
+    /**
+        If a CID is used to create MAC addresses, the X bit becomes the U/L bit
+        (i.e., EUI-48 used as a MAC address or an EUI-64 used as an address)
+    */
+    //TODO: this(CID cid, ubyte[3] extension ...)
+
     invariant
     {
         assert(this._bytes.length == 6, "Invalid length encountered.");
@@ -677,7 +692,15 @@ unittest
     assert(eui.local == false);
 }
 
-//NOTE: ExtendedUniqueIdentifier60 is not implemented because it is deprecated.
+/**
+    The use of the EUI-60 identifier is deprecated. Since EUI-60 identifiers
+    form a portion of the World Wide Names (WWNs) value defined within multiple
+    disk-related standards, there is no plan to eliminate the use of these
+    EUI-60 values in the foreseeable future. The term deprecated does not imply
+    a demise of EUI-60 identifiers, but implies the EUI-64
+    (as opposed to EUI-60) identifiers should be used in future applications
+    requiring the use of unique per-hardware instance identifiers.
+*/
 
 ///
 alias EUI64 = ExtendedUniqueIdentifier64;

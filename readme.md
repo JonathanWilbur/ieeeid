@@ -3,15 +3,14 @@
 * Author: Jonathan M. Wilbur
 * Copyright: Jonathan M. Wilbur
 * License: [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt)
-* Date: May 2nd, 2017
-* Version: 0.2.0
+* Publication Year: 2017
 
 **This version is not ready for use in production. It is not thoroughly tested,
 and does not include all the expected features. Please wait until the release
 of version 1.0.0 before use in production.**
 
 This is both a library and a set of related command line tools for all things
-related to IEEE Identifiers, which includes what were once referred to as 
+related to IEEE Identifiers, which includes what were once referred to as
 "MAC Addresses" (should now be referred to as "Extended Unique Identifiers").
 
 ## Why use a strongly-typed IEEE Identifier? Why not just an array of bytes?
@@ -75,20 +74,44 @@ running `dmd -lib ieeeid.d`.
 
 ## See Also
 
-* [Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)](https://standards.ieee.org/develop/regauth/tut/eui.pdf)
-* [Guidelines for 48-Bit Global Identifier (EUI-48)](https://standards.ieee.org/develop/regauth/tut/eui48.pdf)
-* [Guidelines for 64-Bit Global Identifier (EUI-64)](https://standards.ieee.org/develop/regauth/tut/eui64.pdf)
+* [Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)
+](https://standards.ieee.org/develop/regauth/tut/eui.pdf)
+* [Guidelines for 48-Bit Global Identifier (EUI-48)
+](https://standards.ieee.org/develop/regauth/tut/eui48.pdf)
+* [Guidelines for 64-Bit Global Identifier (EUI-64)
+](https://standards.ieee.org/develop/regauth/tut/eui64.pdf)
+
+## TODO:
+
+- [ ] EUI-60 (even though it is deprecated)
+- [ ] String-parameter constructors (Object.this(string value))
+- [ ] colonDelimitedNotation()
+- [ ] dashDelimitedNotation()
+- [ ] bitReversedNotation()
+- [ ] distinctNullIdentifier() or isNull() (00:00:00 or FF:FF:FF)
+- [ ] opCmp() overrides
+- [ ] EUI48.opCast!EUI64()
+- [ ] Commentary Citations
+- [ ] ieeeinfo
+- [ ] GNU Make makefile
+- [ ] Bash build script
+- [ ] Batch build script
+- [ ] D build program
+- [ ] Unit Tests for every constructor and property
+- [ ] Diagram of the Inheritance Hierarchy of Classes
 
 ## Legal Notice
 
-The term 'EUI-48' is trademarked by the IEEE. From their
-[Guidelines for 48-Bit Global Identifier (EUI-48)](https://standards.ieee.org/develop/regauth/tut/eui48.pdf):
+The terms 'EUI-48' and 'EUI-64' are trademarked by the IEEE. From their
+[Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)
+](https://standards.ieee.org/develop/regauth/tut/eui.pdf):
 
-*The term EUI-48 is trademarked by IEEE and should be so identified. Organizations
-are allowed limited use of this term for commercial purposes. Where such use is
-identification of features or capabilities specified within a standard or for claiming
-compliance to an IEEE standard this may be done without approval of IEEE, but
-other use of this term must be reviewed and approved by the IEEE RAC.*
+*The terms EUI-48 and EUI-64 are trademarked by IEEE. Companies are
+allowed limited use of these terms for commercial purposes. Where
+such use is identification of features or capabilities specified
+within a standard or for claiming compliance to an IEEE standard
+this may be done without approval of IEEE, but other use of this
+term must be reviewed and approved by the IEEE RAC.*
 
 ## Contact Me
 
