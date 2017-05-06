@@ -5,21 +5,23 @@
         </head><body>
         <h1>ieeeid</h1>
 Provides strong types for identifiers invented by the
-    <a href="https://www.ieee.org/index.html">Institute of Electrical and Electronics Engineers (IEEE)</a>.
-    Most notable among its functionality is the ExtendedUniqueIdentifier48 class,
+    <a href="https://www.ieee.org/index.html">    Institute of Electrical and Electronics Engineers (IEEE)</a>.
+    Notable among its functionality is the ExtendedUniqueIdentifier48 class,
     which is technically the same thing as a MAC address, but the term
     'MAC Address' is deprecated by the IEEE in favor of the
     'Extended Unique Identifier' (EUI-48), so this library does not use the term
     or provide any aliases for that term.
 <br><br>
-The term 'EUI-48' is trademarked by the IEEE. From their
-    <a href="https://standards.ieee.org/develop/regauth/tut/eui48.pdf">        Guidelines for 48-Bit Global Identifier (EUI-48)</a>,
+The terms 'EUI-48' and 'EUI-64' are trademarked by the IEEE. From their
+    <a href="https://standards.ieee.org/develop/regauth/tut/eui.pdf">    Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID
+    (CID)</a>,
     <br>
-    <p>        <i>            "The term EUI-48 is trademarked by IEEE and should be so identified. Organizations
-            are allowed limited use of this term for commercial purposes. Where such use is
-            identification of features or capabilities specified within a standard or for claiming
-            compliance to an IEEE standard this may be done without approval of IEEE, but
-            other use of this term must be reviewed and approved by the IEEE RAC."
+    <p>        <i>            "The terms EUI-48 and EUI-64 are trademarked by IEEE. Companies are
+            allowed limited use of these terms for commercial purposes. Where
+            such use is identification of features or capabilities specified
+            within a standard or for claiming compliance to an IEEE standard
+            this may be done without approval of IEEE, but other use of this
+            term must be reviewed and approved by the IEEE RAC."
         </i>
     </p>
 
@@ -28,7 +30,7 @@ The term 'EUI-48' is trademarked by the IEEE. From their
 Jonathan M. Wilbur
 <br><br>
 <b>Date:</b><br>
-April 30th, 2017
+May 2nd, 2017
 <br><br>
 <b>License:</b><br>
 <a href="http://www.boost.org/LICENSE_1_0.txt">Boost License 1.0</a>
@@ -36,10 +38,11 @@ April 30th, 2017
 <b>Standards:</b><br>
 <a href="https://standards.ieee.org/develop/regauth/tut/eui.pdf">            Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)</a>
         <a href="https://standards.ieee.org/develop/regauth/tut/eui48.pdf">            Guidelines for 48-Bit Global Identifier (EUI-48)</a>
+        <a href="http://standards.ieee.org/develop/regauth/tut/eui60.pdf">            Guidelines for use of a 60-bit Extended Unique Identifier (EUI-60)</a>
         <a href="https://standards.ieee.org/develop/regauth/tut/eui64.pdf">            Guidelines for 64-Bit Global Identifier (EUI-64)</a>
 <br><br>
 <b>Version:</b><br>
-0.1.0
+0.2.1
 <br><br>
 <b>See Also:</b><br>
 <a href="https://en.wikipedia.org/wiki/MAC_address">Wikipedia Page for MAC Address</a><br><br>
@@ -100,6 +103,12 @@ A boolean describing whether a the address is a globally registered.<br><br>
 A boolean describing whether a the address is a locally registered.<br><br>
 
 </dd>
+<dt><big><a name="IEEEIdentifier.valid"></a>final @property bool <u>valid</u>();
+</big></dt>
+<dd>Returns <b>true</b> if the Identifier is <u>valid</u>, and <b>false</b> if the identifier is
+        not <u>valid</u>. No <u>valid</u> IEEE Identifier may have all 0x00 or all 0xFF bytes.<br><br>
+
+</dd>
 <dt><big><a name="IEEEIdentifier.opEquals"></a>bool <u>opEquals</u>(T : IEEEIdentifier)(T <i>other</i>);
 </big></dt>
 <dd>Enables comparison of any two IEEE Identifiers. This simply compares the
@@ -120,7 +129,12 @@ A boolean describing whether both addresses are the exact same.<br><br>
 <dd>An IEEE-Assigned Company ID, which is always exactly 24-bits in length.
     Though this type occupies the same 24-bit selection space that MA-L
     identifiers occupy, it may not be used for the construction of MAC (Media
-    Access Control) addresses.<br><br>
+    Access Control) addresses.
+<br><br>
+From page 12 of
+    <a href="https://standards.ieee.org/develop/regauth/tut/eui.pdf">        Guidelines for Use Organizationally Unique Identifier (OUI) and Company ID (CID)</a>:
+    "The Company ID (CID) is a 24-bit globally-unique assigned number that has
+    the X bit set to 1 and the M bit set to 0..."<br><br>
 <b>Examples:</b><br>
 <pre class="d_code">
 <u>CompanyID</u> cid = <font color=blue>new</font> <u>CompanyID</u>(0x66, 0x44, 0x22);
@@ -136,13 +150,44 @@ A boolean describing whether both addresses are the exact same.<br><br>
 <dd>The length in bits of this IEEE Identifier: 24<br><br>
 
 </dd>
-<dt><big><a name="CompanyID.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>);
+<dt><big><a name="CompanyID.this"></a>this(ubyte[3] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a Company ID (CID), which is 24-bits long.
 <br><br>
 <b>Returns:</b><br>
 A Company ID<br><br>
 
+</dd>
+<dt><big><a name="CompanyID.this.2"></a>this(string <i>cid</i>);
+</big></dt>
+<dd>Constructor for a Company ID (CID), which is 24-bits long. This
+        constructor accepts a string input that is supposed to represent a CID.
+        If an invalid string is supplied, the constructor does not throw an
+        exception. It simply applies the correct number of <b>null</b> bytes to the
+        CID. <b>The CID produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>cid</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A Company ID, regardless of whether or not <i>cid</i> actually was a CID.
+            If the string was an invalid CID (such as "03:24:333"), the returned
+            CID will be zeroed out. Be sure to check the returned CID with the
+            valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+CID cid1 = <font color=blue>new</font> CID(<font color=red>"12:34:56"</font>);
+<font color=blue>assert</font>(cid1.bytes == [ 0x12, 0x34, 0x56 ]);
+
+CID cid2 = <font color=blue>new</font> CID(<font color=red>"12:34:56:12"</font>);
+<font color=blue>assert</font>(cid2.bytes == [ 0x00, 0x00, 0x00 ]);
+
+CID cid3 = <font color=blue>new</font> CID(<font color=red>"12:34:56:1"</font>);
+<font color=blue>assert</font>(cid3.bytes == [ 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
 </dd>
 </dl>
 </dd>
@@ -154,6 +199,10 @@ A Company ID<br><br>
 </big></dt>
 <dd>An abstract class from which Media Access Control Identifiers will inherit.<br><br>
 
+</dd>
+<dt><big><a name="MAL"></a>alias <u>MAL</u> = MediaAccessControlLargeIdentifier;
+</big></dt>
+<dd><br><br>
 </dd>
 <dt><big><a name="MACLargeIdentifier"></a>alias <u>MACLargeIdentifier</u> = MediaAccessControlLargeIdentifier;
 </big></dt>
@@ -184,13 +233,44 @@ MACLargeIdentifier macid = <font color=blue>new</font> MACLargeIdentifier(0x00, 
 <dd>The length in bits of this IEEE Identifier: 24<br><br>
 
 </dd>
-<dt><big><a name="MediaAccessControlLargeIdentifier.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>);
+<dt><big><a name="MediaAccessControlLargeIdentifier.this"></a>this(ubyte[3] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a MAC Addresses Large (MA-L) Identifier
 <br><br>
 <b>Returns:</b><br>
 A MA-L Identifier<br><br>
 
+</dd>
+<dt><big><a name="MediaAccessControlLargeIdentifier.this.2"></a>this(string <i>macid</i>);
+</big></dt>
+<dd>Constructor for a MA-L, which is 24-bits long. This
+        constructor accepts a string input that is supposed to represent a MA-L.
+        If an invalid string is supplied, the constructor does not throw an
+        exception. It simply applies the correct number of <b>null</b> bytes to the
+        MA-L. <b>The MA-L produced by this constructor should be checked with
+        the valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>macid</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A MA-L, regardless of whether or not <i>macid</i> actually was a MA-L.
+            If the string was an invalid MA-L (such as "03:24:333"), the
+            returned MA-L will be zeroed out. Be sure to check the returned MA-L
+            with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+MAL mal1 = <font color=blue>new</font> MAL(<font color=red>"10:34:56"</font>);
+<font color=blue>assert</font>(mal1.bytes == [ 0x10, 0x34, 0x56 ]);
+
+MAL mal2 = <font color=blue>new</font> MAL(<font color=red>"12:34:56:12"</font>);
+<font color=blue>assert</font>(mal2.bytes == [ 0x00, 0x00, 0x00 ]);
+
+MAL mal3 = <font color=blue>new</font> MAL(<font color=red>"12:34:56:1"</font>);
+<font color=blue>assert</font>(mal3.bytes == [ 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
 </dd>
 <dt><big><a name="MediaAccessControlLargeIdentifier.opCast"></a>OrganizationallyUniqueIdentifier24 <u>opCast</u>(OrganizationallyUniqueIdentifier24)();
 </big></dt>
@@ -199,6 +279,10 @@ A MA-L Identifier<br><br>
 
 </dd>
 </dl>
+</dd>
+<dt><big><a name="MAM"></a>alias <u>MAM</u> = MediaAccessControlMediumIdentifier;
+</big></dt>
+<dd><br><br>
 </dd>
 <dt><big><a name="MACMediumIdentifier"></a>alias <u>MACMediumIdentifier</u> = MediaAccessControlMediumIdentifier;
 </big></dt>
@@ -225,7 +309,7 @@ MACMediumIdentifier macid = <font color=blue>new</font> MACMediumIdentifier(0x00
 <dd>The length in bits of this IEEE Identifier: 28<br><br>
 
 </dd>
-<dt><big><a name="MediaAccessControlMediumIdentifier.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>, ubyte <i>byte4</i>);
+<dt><big><a name="MediaAccessControlMediumIdentifier.this"></a>this(ubyte[4] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a MAC Addresses Large (MA-M) Identifier.
 <br><br>
@@ -233,7 +317,42 @@ MACMediumIdentifier macid = <font color=blue>new</font> MACMediumIdentifier(0x00
 A MA-M Identifier<br><br>
 
 </dd>
+<dt><big><a name="MediaAccessControlMediumIdentifier.this.2"></a>this(string <i>macid</i>);
+</big></dt>
+<dd>Constructor for a MA-M, which is 28-bits long. This
+        constructor accepts a string input that is supposed to represent a MA-M.
+        If an invalid string is supplied, the constructor does not throw an
+        exception. It simply applies the correct number of <b>null</b> bytes to the
+        MA-M. <b>The MA-M produced by this constructor should be checked with
+        the valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>macid</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A MA-M, regardless of whether or not <i>macid</i> actually was a MA-M.
+            If the string was an invalid MA-L (such as "03:24:333"), the
+            returned MA-M will be zeroed out. Be sure to check the returned MA-M
+            with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+MAM mam1 = <font color=blue>new</font> MAM(<font color=red>"10:34:56:40"</font>);
+<font color=blue>assert</font>(mam1.bytes == [ 0x10, 0x34, 0x56, 0x40 ]);
+
+MAM mam2 = <font color=blue>new</font> MAM(<font color=red>"12:34:12"</font>);
+<font color=blue>assert</font>(mam2.bytes == [ 0x00, 0x00, 0x00, 0x00 ]);
+
+MAM mam3 = <font color=blue>new</font> MAM(<font color=red>"12:34:56:11:22"</font>);
+<font color=blue>assert</font>(mam3.bytes == [ 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
 </dl>
+</dd>
+<dt><big><a name="MAS"></a>alias <u>MAS</u> = MediaAccessControlSmallIdentifier;
+</big></dt>
+<dd><br><br>
 </dd>
 <dt><big><a name="MACSmallIdentifier"></a>alias <u>MACSmallIdentifier</u> = MediaAccessControlSmallIdentifier;
 </big></dt>
@@ -260,13 +379,44 @@ MACSmallIdentifier macid = <font color=blue>new</font> MACSmallIdentifier(0x00, 
 <dd>The length in bits of this IEEE Identifier: 36<br><br>
 
 </dd>
-<dt><big><a name="MediaAccessControlSmallIdentifier.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>, ubyte <i>byte4</i>, ubyte <i>byte5</i>);
+<dt><big><a name="MediaAccessControlSmallIdentifier.this"></a>this(ubyte[5] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a MAC Addresses Large (MA-S) Identifier
 <br><br>
 <b>Returns:</b><br>
 A MA-S Identifier<br><br>
 
+</dd>
+<dt><big><a name="MediaAccessControlSmallIdentifier.this.2"></a>this(string <i>macid</i>);
+</big></dt>
+<dd>Constructor for a MA-S, which is 36-bits long. This
+        constructor accepts a string input that is supposed to represent a MA-S.
+        If an invalid string is supplied, the constructor does not throw an
+        exception. It simply applies the correct number of <b>null</b> bytes to the
+        MA-S. <b>The MA-S produced by this constructor should be checked with
+        the valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>macid</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A MA-S, regardless of whether or not <i>macid</i> actually was a MA-S.
+            If the string was an invalid MA-S (such as "03:24:333"), the
+            returned MA-S will be zeroed out. Be sure to check the returned MA-S
+            with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+MAS mas1 = <font color=blue>new</font> MAS(<font color=red>"10:34:56:40:55"</font>);
+<font color=blue>assert</font>(mas1.bytes == [ 0x10, 0x34, 0x56, 0x40, 0x50 ]);
+
+MAS mas2 = <font color=blue>new</font> MAS(<font color=red>"12:34:12"</font>);
+<font color=blue>assert</font>(mas2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+MAS mas3 = <font color=blue>new</font> MAS(<font color=red>"12:34:56:11:22:44:66:00:FF"</font>);
+<font color=blue>assert</font>(mas3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
 </dd>
 <dt><big><a name="MediaAccessControlSmallIdentifier.opCast"></a>OrganizationallyUniqueIdentifier36 <u>opCast</u>(OrganizationallyUniqueIdentifier36)();
 </big></dt>
@@ -310,7 +460,7 @@ OUI24 oui = <font color=blue>new</font> OUI24(0x00, 0x00, 0x00);
 <dd>The length in bits of this IEEE Identifier: 24<br><br>
 
 </dd>
-<dt><big><a name="OrganizationallyUniqueIdentifier24.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>);
+<dt><big><a name="OrganizationallyUniqueIdentifier24.this"></a>this(ubyte[3] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a 24-Bit Organizationally Unique Identifier (OUI-24)
 <br><br>
@@ -349,7 +499,7 @@ OUI36 oui = <font color=blue>new</font> OUI36(0x00, 0x00, 0x00, 0x00, 0x00);
 <dd>The length in bits of this IEEE Identifier: 36<br><br>
 
 </dd>
-<dt><big><a name="OrganizationallyUniqueIdentifier36.this"></a>this(ubyte <i>byte1</i>, ubyte <i>byte2</i>, ubyte <i>byte3</i>, ubyte <i>byte4</i>, ubyte <i>byte5</i>);
+<dt><big><a name="OrganizationallyUniqueIdentifier36.this"></a>this(ubyte[5] <i>bytes</i>...);
 </big></dt>
 <dd>Constructor for a 36-Bit Organizationally Unique Identifier (OUI-36)
 <br><br>
@@ -365,6 +515,137 @@ A 36-Bit Organizationally Unique Identifier (OUI-36)<br><br>
 </dd>
 </dl>
 </dd>
+<dt><big><a name="CDI"></a>alias <u>CDI</u> = ContextDependentIdentifier;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ContextDependentIdentifier"></a>abstract class <u>ContextDependentIdentifier</u>: <u>ieeeid.IEEEIdentifier</u>;
+</big></dt>
+<dd>An abstract class from which both the CDI-32 and CDI-40 will inherit.<br><br>
+
+</dd>
+<dt><big><a name="CDI32"></a>alias <u>CDI32</u> = ContextDependentIdentifier32;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ContextDependentIdentifier32"></a>class <u>ContextDependentIdentifier32</u>: <u>ieeeid.ContextDependentIdentifier</u>;
+</big></dt>
+<dd>A 32-Bit Context Dependent Identifier.<br><br>
+
+<dl><dt><big><a name="ContextDependentIdentifier32.this"></a>this(ubyte[4] <i>bytes</i>...);
+</big></dt>
+<dd>Constructor for a 32-Bit Context Dependent Identifier
+<br><br>
+<b>Returns:</b><br>
+A 32-Bit Context Dependent Identifier<br><br>
+
+</dd>
+<dt><big><a name="ContextDependentIdentifier32.this.2"></a>this(OUI <i>oui</i>, ubyte[1] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 32-Bit Context Dependent Identifier
+<br><br>
+<b>Returns:</b><br>
+A 32-Bit Context Dependent Identifier<br><br>
+
+</dd>
+<dt><big><a name="ContextDependentIdentifier32.this.3"></a>this(string <i>cdi</i>);
+</big></dt>
+<dd>Constructor for a CDI-32, which is 32-bits long. This constructor
+        accepts a string input that is supposed to represent a CDI-32. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the CDI-32.
+        <b>The CDI-32 produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>cdi</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A CDI-32, regardless of whether or not macid actually was a CDI-32.
+            If the string was an invalid CDI-32 (such as "03:24:333"), the
+            returned CDI-32 will be zeroed out. Be sure to check the returned
+            CDI-32 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+CDI32 cdi1 = <font color=blue>new</font> CDI32(<font color=red>"10:34:56:78"</font>);
+<font color=blue>assert</font>(cdi1.bytes == [ 0x10, 0x34, 0x56, 0x78 ]);
+
+CDI32 cdi2 = <font color=blue>new</font> CDI32(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(cdi2.bytes == [ 0x00, 0x00, 0x00, 0x00 ]);
+
+CDI32 cdi3 = <font color=blue>new</font> CDI32(<font color=red>"12:34:56:11:22"</font>);
+<font color=blue>assert</font>(cdi3.bytes == [ 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+</dl>
+</dd>
+<dt><big><a name="CDI40"></a>alias <u>CDI40</u> = ContextDependentIdentifier40;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ContextDependentIdentifier40"></a>class <u>ContextDependentIdentifier40</u>: <u>ieeeid.ContextDependentIdentifier</u>;
+</big></dt>
+<dd>A 40-Bit Context Dependent Identifier.<br><br>
+
+<dl><dt><big><a name="ContextDependentIdentifier40.this"></a>this(ubyte[5] <i>bytes</i>...);
+</big></dt>
+<dd>Constructor for a 40-Bit Context Dependent Identifier
+<br><br>
+<b>Returns:</b><br>
+A 40-Bit Context Dependent Identifier<br><br>
+
+</dd>
+<dt><big><a name="ContextDependentIdentifier40.this.2"></a>this(OUI24 <i>oui</i>, ubyte[2] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 40-Bit Context Dependent Identifier
+<br><br>
+<b>Returns:</b><br>
+A 40-Bit Context Dependent Identifier<br><br>
+
+</dd>
+<dt><big><a name="ContextDependentIdentifier40.this.3"></a>this(OUI36 <i>oui</i>, ubyte[1] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 40-Bit Context Dependent Identifier
+<br><br>
+<b>Returns:</b><br>
+A 40-Bit Context Dependent Identifier<br><br>
+
+</dd>
+<dt><big><a name="ContextDependentIdentifier40.this.4"></a>this(string <i>cdi</i>);
+</big></dt>
+<dd>Constructor for a CDI-40, which is 40-bits long. This constructor
+        accepts a string input that is supposed to represent a CDI-32. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the CDI-32.
+        <b>The CDI-32 produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>cdi</i></td>
+<td>A string that cannot be greater than 8 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A CDI-32, regardless of whether or not macid actually was a CDI-32.
+            If the string was an invalid CDI-32 (such as "03:24:333"), the
+            returned CDI-32 will be zeroed out. Be sure to check the returned
+            CDI-32 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+CDI40 cdi1 = <font color=blue>new</font> CDI40(<font color=red>"10:34:56:78:90"</font>);
+<font color=blue>assert</font>(cdi1.bytes == [ 0x10, 0x34, 0x56, 0x78, 0x90 ]);
+
+CDI40 cdi2 = <font color=blue>new</font> CDI40(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(cdi2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+CDI40 cdi3 = <font color=blue>new</font> CDI40(<font color=red>"12:34:56:11:22"</font>);
+<font color=blue>assert</font>(cdi3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+</dl>
+</dd>
 <dt><big><a name="EUI"></a>alias <u>EUI</u> = ExtendedUniqueIdentifier;
 </big></dt>
 <dd><br><br>
@@ -373,6 +654,415 @@ A 36-Bit Organizationally Unique Identifier (OUI-36)<br><br>
 </big></dt>
 <dd>An abstract class from which both the EUI-48 and EUI-64 will inherit<br><br>
 
+</dd>
+<dt><big><a name="EUI48"></a>alias <u>EUI48</u> = ExtendedUniqueIdentifier48;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48"></a>class <u>ExtendedUniqueIdentifier48</u>: <u>ieeeid.ExtendedUniqueIdentifier</u>;
+</big></dt>
+<dd>A 48-Bit Extended Unique Identifier (EUI-48). This is the same thing as a
+    Media Access Control (MAC) Address, but the term "MAC Address" is
+    deprecated by the IEEE, so this library does not use this term in any way.
+<br><br>
+This class can be cast to a 64-Bit Extended Unique Identifier (EUI-64).<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI48 eui = <font color=blue>new</font> EUI48(0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+<font color=blue>assert</font>(eui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+<font color=blue>assert</font>(eui.unicast == <font color=blue>true</font>);
+<font color=blue>assert</font>(eui.multicast == <font color=blue>false</font>);
+<font color=blue>assert</font>(eui.global == <font color=blue>true</font>);
+<font color=blue>assert</font>(eui.local == <font color=blue>false</font>);
+</pre>
+<br><br>
+<dl><dt><big><a name="ExtendedUniqueIdentifier48.bitLength"></a>static immutable int <u>bitLength</u>;
+</big></dt>
+<dd>The length in bits of this IEEE Identifier: 48<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this"></a>this(ubyte[6] <i>fullbytes</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.2"></a>this(OUI24 <i>oui</i>, ubyte[3] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.3"></a>this(OUI36 <i>oui</i>, ubyte[2] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.4"></a>this(MACLargeIdentifier <i>macid</i>, ubyte[3] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.5"></a>this(MACMediumIdentifier <i>macid</i>, ubyte[3] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.6"></a>this(MACSmallIdentifier <i>macid</i>, ubyte[2] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 48-Bit Extended Unique Identifier (EUI-48)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-48)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.this.7"></a>this(string <i>eui</i>);
+</big></dt>
+<dd>If a CID is used to create MAC addresses, the X bit becomes the U/L bit
+        (i.e., EUI-48 used as a MAC address or an EUI-64 used as an address)
+<br><br>
+Constructor for an EUI-48, which is 48-bits long. This constructor
+        accepts a string input that is supposed to represent a EUI-48. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the EUI-48.
+        <b>The EUI produced by this constructor should be checked with the
+        valid() property.</b>
+
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>eui</i></td>
+<td>A string that cannot be greater than 17 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A EUI-48, regardless of whether or not macid actually was a EUI-48.
+            If the string was an invalid EUI-48 (such as "03:24:333"), the
+            returned EUI-48 will be zeroed out. Be sure to check the returned
+            EUI-48 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI48 eui1 = <font color=blue>new</font> EUI48(<font color=red>"10:34:56:78:90:14"</font>);
+<font color=blue>assert</font>(eui1.bytes == [ 0x10, 0x34, 0x56, 0x78, 0x90, 0x14 ]);
+
+EUI48 eui2 = <font color=blue>new</font> EUI48(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(eui2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+EUI48 eui3 = <font color=blue>new</font> EUI48(<font color=red>"12:34:56:11"</font>);
+<font color=blue>assert</font>(eui3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier48.opCast"></a>EUI64 <u>opCast</u>(EUI48)();
+</big></dt>
+<dd>An override of the <u>opCast</u> method so you can convert this to a
+        MediaAccessControlSmallIdentifier.<br><br>
+
+</dd>
+</dl>
+</dd>
+<dt><big><a name="EUI60"></a>alias <u>EUI60</u> = ExtendedUniqueIdentifier60;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier60"></a>class <u>ExtendedUniqueIdentifier60</u>: <u>ieeeid.ExtendedUniqueIdentifier</u>;
+</big></dt>
+<dd>The use of the EUI-60 identifier is deprecated. Since EUI-60 identifiers
+    form a portion of the World Wide Names (WWNs) value defined within multiple
+    disk-related standards, there is no plan to eliminate the use of these
+    EUI-60 values in the foreseeable future. The term deprecated does not imply
+    a demise of EUI-60 identifiers, but implies the EUI-64
+    (as opposed to EUI-60) identifiers should be used in future applications
+    requiring the use of unique per-hardware instance identifiers.
+<br><br>
+Note that the EUI-60 can only be generated with an OUI-24.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI60 oui = <font color=blue>new</font> EUI60(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+<font color=blue>assert</font>(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+<font color=blue>assert</font>(oui.unicast == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.multicast == <font color=blue>false</font>);
+<font color=blue>assert</font>(oui.global == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.local == <font color=blue>false</font>);
+</pre>
+<br><br>
+<dl><dt><big><a name="ExtendedUniqueIdentifier60.bitLength"></a>static immutable int <u>bitLength</u>;
+</big></dt>
+<dd>The length in bits of this IEEE Identifier: 60<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier60.this"></a>this(ubyte[8] <i>bytes</i>...);
+</big></dt>
+<dd>Constructor for a 60-Bit Extended Unique Identifier (EUI-60)
+<br><br>
+<b>Returns:</b><br>
+A 60-Bit Extended Unique Identifier (EUI-60)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier60.this.2"></a>this(OUI24 <i>oui</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 60-Bit Extended Unique Identifier (EUI-60)
+<br><br>
+<b>Returns:</b><br>
+A 60-Bit Extended Unique Identifier (EUI-60)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier60.this.3"></a>this(string <i>eui</i>);
+</big></dt>
+<dd>Constructor for an EUI-60, which is 60-bits long. This constructor
+        accepts a string input that is supposed to represent a EUI-60. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the EUI-60.
+        <b>The EUI produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>eui</i></td>
+<td>A string that cannot be greater than 23 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A EUI-60, regardless of whether or not macid actually was a EUI-60.
+            If the string was an invalid EUI-60 (such as "03:24:333"), the
+            returned EUI-60 will be zeroed out. Be sure to check the returned
+            EUI-60 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI60 eui1 = <font color=blue>new</font> EUI60(<font color=red>"10:34:56:78:90:14:80:84"</font>);
+<font color=blue>assert</font>(eui1.bytes == [ 0x10, 0x34, 0x56, 0x78, 0x90, 0x14, 0x80, 0x80 ]);
+
+EUI60 eui2 = <font color=blue>new</font> EUI60(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(eui2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+EUI60 eui3 = <font color=blue>new</font> EUI60(<font color=red>"12:34:56:11"</font>);
+<font color=blue>assert</font>(eui3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+</dl>
+</dd>
+<dt><big><a name="EUI64"></a>alias <u>EUI64</u> = ExtendedUniqueIdentifier64;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64"></a>class <u>ExtendedUniqueIdentifier64</u>: <u>ieeeid.ExtendedUniqueIdentifier</u>;
+</big></dt>
+<dd>A 64-Bit Extended Unique Identifier (EUI-64). This class can be created by
+    casting from a 48-Bit Extended Unique Identifier, but a 48-Bit Extended
+    Unique Identifier cannot be created from this class. (The cast is
+    <i>irreversable</i>, in other words.)<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI64 oui = <font color=blue>new</font> EUI64(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+<font color=blue>assert</font>(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+<font color=blue>assert</font>(oui.unicast == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.multicast == <font color=blue>false</font>);
+<font color=blue>assert</font>(oui.global == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.local == <font color=blue>false</font>);
+</pre>
+<br><br>
+<dl><dt><big><a name="ExtendedUniqueIdentifier64.bitLength"></a>static immutable int <u>bitLength</u>;
+</big></dt>
+<dd>The length in bits of this IEEE Identifier: 64<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this"></a>this(ubyte[8] <i>bytes</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.2"></a>this(OUI24 <i>oui</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.3"></a>this(OUI36 <i>oui</i>, ubyte[4] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.4"></a>this(MACLargeIdentifier <i>macid</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.5"></a>this(MACMediumIdentifier <i>macid</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.6"></a>this(MACSmallIdentifier <i>macid</i>, ubyte[4] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Extended Unique Identifier (EUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Extended Unique Identifier (EUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ExtendedUniqueIdentifier64.this.7"></a>this(string <i>eui</i>);
+</big></dt>
+<dd>Constructor for an EUI-64, which is 64-bits long. This constructor
+        accepts a string input that is supposed to represent a EUI-64. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the EUI-64.
+        <b>The EUI produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>eui</i></td>
+<td>A string that cannot be greater than 23 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A EUI-64, regardless of whether or not macid actually was a EUI-60.
+            If the string was an invalid EUI-64 (such as "03:24:333"), the
+            returned EUI-64 will be zeroed out. Be sure to check the returned
+            EUI-64 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI64 eui1 = <font color=blue>new</font> EUI64(<font color=red>"10:34:56:78:90:14:80:84"</font>);
+<font color=blue>assert</font>(eui1.bytes == [ 0x10, 0x34, 0x56, 0x78, 0x90, 0x14, 0x80, 0x84 ]);
+
+EUI64 eui2 = <font color=blue>new</font> EUI64(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(eui2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+EUI64 eui3 = <font color=blue>new</font> EUI64(<font color=red>"10:34:56:11"</font>);
+<font color=blue>assert</font>(eui3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+</dl>
+</dd>
+<dt><big><a name="MEUI64"></a>alias <u>MEUI64</u> = ModifiedExtendedUniqueIdentifier64;
+</big></dt>
+<dd><br><br>
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64"></a>class <u>ModifiedExtendedUniqueIdentifier64</u>: <u>ieeeid.ExtendedUniqueIdentifier</u>;
+</big></dt>
+<dd>The Modified Extended Unique Identifier. This differs from the EUI-64 only
+    by the global/local bit being inverted. This is used by IPv6.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+EUI64 oui = <font color=blue>new</font> EUI64(0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+<font color=blue>assert</font>(oui.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+<font color=blue>assert</font>(oui.unicast == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.multicast == <font color=blue>false</font>);
+<font color=blue>assert</font>(oui.global == <font color=blue>true</font>);
+<font color=blue>assert</font>(oui.local == <font color=blue>false</font>);
+</pre>
+<br><br>
+<dl><dt><big><a name="ModifiedExtendedUniqueIdentifier64.bitLength"></a>static immutable int <u>bitLength</u>;
+</big></dt>
+<dd>The length in bits of this IEEE Identifier: 64<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this"></a>this(ubyte[8] <i>bytes</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 48-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.2"></a>this(OUI24 <i>oui</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.3"></a>this(OUI36 <i>oui</i>, ubyte[4] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.4"></a>this(MACLargeIdentifier <i>macid</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.5"></a>this(MACMediumIdentifier <i>macid</i>, ubyte[5] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.6"></a>this(MACSmallIdentifier <i>macid</i>, ubyte[4] <i>extension</i>...);
+</big></dt>
+<dd>Constructor for a 64-Bit Modified Extended Unique Identifier (MEUI-64)
+<br><br>
+<b>Returns:</b><br>
+A 64-Bit Modified Extended Unique Identifier (MEUI-64)<br><br>
+
+</dd>
+<dt><big><a name="ModifiedExtendedUniqueIdentifier64.this.7"></a>this(string <i>meui</i>);
+</big></dt>
+<dd>Constructor for an MEUI-64, which is 64-bits long. This constructor
+        accepts a string input that is supposed to represent a MEUI-64. If an
+        invalid string is supplied, the constructor does not throw an exception.
+        It simply applies the correct number of <b>null</b> bytes to the MEUI-64.
+        <b>The EUI produced by this constructor should be checked with the
+        valid() property.</b>
+<br><br>
+<b>Params:</b><br>
+<table><tr><td>string <i>meui</i></td>
+<td>A string that cannot be greater than 23 characters in length.</td></tr>
+</table><br>
+<b>Returns:</b><br>
+A MEUI-64, regardless of whether or not macid actually was a
+            MEUI-64. If the string was an invalid MEUI-64 (such as "03:24:333"),
+            the returned MEUI-64 will be zeroed out. Be sure to check the
+            returned MEUI-64 with the valid() property.<br><br>
+<b>Examples:</b><br>
+<pre class="d_code">
+MEUI64 eui1 = <font color=blue>new</font> MEUI64(<font color=red>"12:34:56:78:90:14:80:84"</font>);
+<font color=blue>assert</font>(eui1.bytes == [ 0x12, 0x34, 0x56, 0x78, 0x90, 0x14, 0x80, 0x84 ]);
+
+MEUI64 eui2 = <font color=blue>new</font> MEUI64(<font color=red>"10:34:56:78:90:14:80:84"</font>);
+<font color=blue>assert</font>(eui2.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+MEUI64 eui3 = <font color=blue>new</font> MEUI64(<font color=red>"1~2:3:3%"</font>);
+<font color=blue>assert</font>(eui3.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+
+MEUI64 eui4 = <font color=blue>new</font> MEUI64(<font color=red>"12:34:56:11"</font>);
+<font color=blue>assert</font>(eui4.bytes == [ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]);
+</pre>
+<br><br>
+</dd>
+</dl>
 </dd>
 </dl>
 

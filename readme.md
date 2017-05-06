@@ -60,17 +60,18 @@ OUI24 oui = new OUI24(0x12, 0x34, 0x56, 0x78); // An OUI should be three bytes!
 * MAC Address Large Block Identifier (MA-L)
 * MAC Address Medium Block Identifier (MA-M)
 * MAC Address Small Block Identifier (MA-S)
+* 32-Bit Context Dependent Identifier (CDI-32)
+* 40-Bit Context Dependent Identifier (CDI-40)
 * 48-Bit Extended Unique Identifier (EUI-48)
+* 60-Bit Extended Unique Identifier (EUI-60)
 * 64-Bit Extended Unique Identifier (EUI-64)
+* 64-Bit Modified Extended Unique Identifier (MEUI-64)
 
 ## Compile and Install
 
 As of right now, there are no build scripts, since the source is a single file,
 but there will be build scripts in the future, just for the sake of consistency
 across all similar projects.
-
-For the moment, you can simply compile by changing to the `source` directory and
-running `dmd -lib ieeeid.d`.
 
 ## See Also
 
@@ -83,14 +84,10 @@ running `dmd -lib ieeeid.d`.
 
 ## TODO:
 
-- [ ] EUI-60 (even though it is deprecated)
-- [ ] String-parameter constructors (Object.this(string value))
-- [ ] colonDelimitedNotation()
-- [ ] dashDelimitedNotation()
+These will be done in approximately this order.
+
 - [ ] bitReversedNotation()
-- [ ] distinctNullIdentifier() or isNull() (00:00:00 or FF:FF:FF)
 - [ ] opCmp() overrides
-- [ ] EUI48.opCast!EUI64()
 - [ ] Commentary Citations
 - [ ] ieeeinfo
 - [ ] GNU Make makefile
@@ -99,6 +96,7 @@ running `dmd -lib ieeeid.d`.
 - [ ] D build program
 - [ ] Unit Tests for every constructor and property
 - [ ] Diagram of the Inheritance Hierarchy of Classes
+- [ ] Compilation Contract
 
 ## Legal Notice
 
